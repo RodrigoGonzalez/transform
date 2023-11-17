@@ -168,21 +168,17 @@ def transform_data(working_dir):
 
   with beam.Pipeline() as pipeline:
     with beam_impl.Context(temp_dir=tempfile.mkdtemp()):
-      train_data = (
-          pipeline |
-          'ReadTrain' >> tfrecordio.ReadFromTFRecord(
-              os.path.join(working_dir,
-                           SHUFFLED_TRAIN_DATA_FILEBASE + '*'),
-              coder=example_proto_coder.ExampleProtoCoder(
-                  RAW_DATA_METADATA.schema)))
+      train_data = pipeline | ('ReadTrain' >> tfrecordio.ReadFromTFRecord(
+          os.path.join(working_dir, f'{SHUFFLED_TRAIN_DATA_FILEBASE}*'),
+          coder=example_proto_coder.ExampleProtoCoder(
+              RAW_DATA_METADATA.schema),
+      ))
 
-      test_data = (
-          pipeline |
-          'ReadTest' >> tfrecordio.ReadFromTFRecord(
-              os.path.join(working_dir,
-                           SHUFFLED_TEST_DATA_FILEBASE + '*'),
-              coder=example_proto_coder.ExampleProtoCoder(
-                  RAW_DATA_METADATA.schema)))
+      test_data = pipeline | ('ReadTest' >> tfrecordio.ReadFromTFRecord(
+          os.path.join(working_dir, f'{SHUFFLED_TEST_DATA_FILEBASE}*'),
+          coder=example_proto_coder.ExampleProtoCoder(
+              RAW_DATA_METADATA.schema),
+      ))
 
       def preprocessing_fn(inputs):
         """Preprocess input columns into transformed columns."""
@@ -256,8 +252,11 @@ def _make_training_input_fn(working_dir, filebase, batch_size):
   def input_fn():
     """Input function for training and eval."""
     transformed_features = tf.contrib.learn.io.read_batch_features(
-        os.path.join(working_dir, filebase + '*'),
-        batch_size, transformed_feature_spec, tf.TFRecordReader)
+        os.path.join(working_dir, f'{filebase}*'),
+        batch_size,
+        transformed_feature_spec,
+        tf.TFRecordReader,
+    )
 
     # Extract features and label from the transformed tensors.
     transformed_labels = transformed_features.pop(LABEL_KEY)

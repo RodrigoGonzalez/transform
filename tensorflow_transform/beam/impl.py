@@ -201,14 +201,12 @@ class _RunMetaGraphDoFn(beam.DoFn):
         self.session.run(tf.tables_initializer())
 
         input_schema_keys = input_schema.column_schemas.keys()
-        extra_input_keys = set(input_schema_keys).difference(inputs.keys())
-        if extra_input_keys:
-          raise ValueError('Input schema contained keys not in graph: %s' %
-                           input_schema_keys)
-        extra_output_keys = set(exclude_outputs).difference(outputs.keys())
-        if extra_output_keys:
-          raise ValueError('Excluded outputs contained keys not in graph: %s' %
-                           exclude_outputs)
+        if extra_input_keys := set(input_schema_keys).difference(inputs.keys()):
+          raise ValueError(
+              f'Input schema contained keys not in graph: {input_schema_keys}')
+        if extra_output_keys := set(exclude_outputs).difference(outputs.keys()):
+          raise ValueError(
+              f'Excluded outputs contained keys not in graph: {exclude_outputs}')
         non_excluded_output_keys = set(outputs.keys()).difference(
             exclude_outputs)
         self.inputs = {key: inputs[key] for key in input_schema_keys}
@@ -259,8 +257,9 @@ class _RunMetaGraphDoFn(beam.DoFn):
       return self._graph_state.session.run(
           self._graph_state.outputs, feed_dict=feed_dict)
     except Exception as e:
-      tf.logging.error('%s while applying transform function for tensors %s' %
-                       (e, self._graph_state.outputs))
+      tf.logging.error(
+          f'{e} while applying transform function for tensors {self._graph_state.outputs}'
+      )
       raise
 
   def _make_graph_state(self, saved_model_dir):
@@ -406,9 +405,8 @@ class _ReplaceTensorsWithConstants(beam.PTransform):
     tensor_value_pairs = []
     for name, pcoll in six.iteritems(tensor_pcoll_mapping):
       tensor_value_pairs.append(
-          pcoll
-          | 'AddName[%s]' % name
-          >> beam.Map(lambda x, name=name: (name, x)))
+          (pcoll
+           | (f'AddName[{name}]' >> beam.Map(lambda x, name=name: (name, x)))))
     tensor_value_mapping = beam.pvalue.AsDict(
         tensor_value_pairs | 'MergeTensorValuePairs' >> beam.Flatten())
 
@@ -495,10 +493,9 @@ class _ComputeAnalyzerOutputs(beam.PTransform):
       assert len(analyzer.inputs) == 1
       output_pcolls = (
           analyzer_input_values
-          | 'ExtractInput[%s]' % analyzer.name >> beam.Map(
-              lambda batch, key: batch[key],
-              key=analyzer.inputs[0].name)
-          | 'Analyze[%s]' % analyzer.name >> analyzer_impl)
+          | (f'ExtractInput[{analyzer.name}]' >> beam.Map(
+              lambda batch, key: batch[key], key=analyzer.inputs[0].name))
+      ) | f'Analyze[{analyzer.name}]' >> analyzer_impl
       assert len(analyzer.outputs) == len(output_pcolls), (
           'Analyzer outputs don\'t match the expected outputs from the '
           'Analyzer definition: %d != %d' %
@@ -560,9 +557,8 @@ class _ComputeTensorValues(beam.PTransform):
     tensor_value_pairs = []
     for name, pcoll in six.iteritems(tensor_pcoll_mapping):
       tensor_value_pairs.append(
-          pcoll
-          | 'AddName[%s]' % name
-          >> beam.Map(lambda x, name=name: (name, x)))
+          (pcoll
+           | (f'AddName[{name}]' >> beam.Map(lambda x, name=name: (name, x)))))
     tensor_value_mapping = beam.pvalue.AsDict(
         tensor_value_pairs
         | 'MergeTensorValuePairs' >> beam.Flatten(pipeline=self.pipeline))
@@ -591,6 +587,7 @@ class _ComputeTensorValues(beam.PTransform):
                 saved_model_dir, tensor_replacement_map, tensor_names))
         session.run(tf.tables_initializer())
         return session.run(tensor_output_map)
+
     tensor_values_by_name_pcoll = (
         tensor_names_pcoll |
         'ExtractScalarConstants' >> beam.Map(
@@ -599,9 +596,9 @@ class _ComputeTensorValues(beam.PTransform):
             tensor_value_mapping=tensor_value_mapping))
     result = {}
     for name in self._tensor_names:
-      result[name] = (
-          tensor_values_by_name_pcoll
-          | 'Extract[%s]' % name >> beam.Map(lambda d, name=name: d[name]))
+      result[
+          name] = tensor_values_by_name_pcoll | f'Extract[{name}]' >> beam.Map(
+              lambda d, name=name: d[name])
 
     return result
 

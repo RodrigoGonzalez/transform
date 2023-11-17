@@ -24,11 +24,11 @@ from tensorflow_transform.tf_metadata import version_api
 class SchemaIOvTest(version_api.SchemaIO):
 
   def write(self, schema, path):
-    with open(path + ".test", "w") as f:
+    with open(f"{path}.test", "w") as f:
       f.write("\n".join(schema.column_schemas.keys()))
 
   def read(self, path):
-    with open(path + ".test") as f:
+    with open(f"{path}.test") as f:
       all_feature_names = f.read().splitlines()
     return TestSchema(all_feature_names)
 
@@ -36,7 +36,9 @@ class SchemaIOvTest(version_api.SchemaIO):
 class TestSchema(dataset_schema.Schema):
 
   def __init__(self, feature_names):
-    features = {feature_name: "Bogus FeatureSchema for %s" % feature_name
-                for feature_name in feature_names}
+    features = {
+        feature_name: f"Bogus FeatureSchema for {feature_name}"
+        for feature_name in feature_names
+    }
     super(TestSchema, self).__init__(features)
 

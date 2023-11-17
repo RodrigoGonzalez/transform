@@ -68,9 +68,8 @@ def _create_raw_metadata():
   })
   column_schemas[LABEL_KEY] = dataset_schema.ColumnSchema(
       tf.string, [], dataset_schema.FixedColumnRepresentation())
-  raw_data_metadata = dataset_metadata.DatasetMetadata(dataset_schema.Schema(
-      column_schemas))
-  return raw_data_metadata
+  return dataset_metadata.DatasetMetadata(
+      dataset_schema.Schema(column_schemas))
 
 RAW_DATA_METADATA = _create_raw_metadata()
 
@@ -228,8 +227,11 @@ def _make_training_input_fn(working_dir, filebase, batch_size):
   def input_fn():
     """Input function for training and eval."""
     transformed_features = tf.contrib.learn.io.read_batch_features(
-        os.path.join(working_dir, filebase + '*'),
-        batch_size, transformed_feature_spec, tf.TFRecordReader)
+        os.path.join(working_dir, f'{filebase}*'),
+        batch_size,
+        transformed_feature_spec,
+        tf.TFRecordReader,
+    )
 
     # Extract features and label from the transformed tensors.
     transformed_labels = transformed_features.pop(LABEL_KEY)

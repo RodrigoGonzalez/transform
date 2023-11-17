@@ -165,7 +165,7 @@ def build_csv_transforming_serving_input_receiver_fn(
   # Check for errors.
   for k in raw_keys:
     if k not in column_schemas:
-      raise ValueError("Key %s does not exist in the schema" % k)
+      raise ValueError(f"Key {k} does not exist in the schema")
     if not isinstance(column_schemas[k].representation,
                       dataset_schema.FixedColumnRepresentation):
       raise ValueError(("CSV files can only support tensors of fixed size"
@@ -195,7 +195,7 @@ def build_csv_transforming_serving_input_receiver_fn(
     parsed_tensors = tf.decode_csv(placeholder, record_defaults,
                                    field_delim=field_delim)
 
-    raw_serving_features = {k: v for k, v in zip(raw_keys, parsed_tensors)}
+    raw_serving_features = dict(zip(raw_keys, parsed_tensors))
 
     _, transformed_features = (
         saved_transform_io.partially_apply_saved_transform(
@@ -676,9 +676,8 @@ def _prepare_feature_keys(all_keys, label_keys, feature_keys=None):
     raise ValueError("label_keys must be specified.")
   if feature_keys is None:
     feature_keys = list(set(all_keys) - set(label_keys))
-  overlap_keys = set(label_keys) & set(feature_keys)
-  if overlap_keys:
-    raise ValueError("Keys cannot be used as both a feature and a "
-                     "label: {}".format(overlap_keys))
+  if overlap_keys := set(label_keys) & set(feature_keys):
+    raise ValueError(
+        f"Keys cannot be used as both a feature and a label: {overlap_keys}")
 
   return feature_keys

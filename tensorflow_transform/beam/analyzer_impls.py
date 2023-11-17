@@ -127,10 +127,7 @@ class _NumericCombineAnalyzerImpl(beam.PTransform):
 
     def add_input(self, accumulator, next_input):
       batch = self._fn(next_input, axis=0)
-      if any(accumulator):
-        return self._fn((accumulator, batch), axis=0)
-      else:
-        return batch
+      return self._fn((accumulator, batch), axis=0) if any(accumulator) else batch
 
     def merge_accumulators(self, accumulators):
       # numpy's sum, min, max, etc functions operate on array-like objects, but
@@ -199,14 +196,14 @@ class _UniquesAnalyzerImpl(beam.PTransform):
     # Filter is cheaper than TopK computation and the two commute, so
     # filter first.
     if frequency_threshold is not None:
-      counts |= ('FilterByFrequencyThreshold(%s)' % frequency_threshold >>
+      counts |= (f'FilterByFrequencyThreshold({frequency_threshold})' >>
                  beam.Filter(lambda kv: kv[0] >= frequency_threshold))
 
     if top_k is not None:
       counts = (counts
-                | 'Top(%s)' % top_k
-                >> beam.transforms.combiners.Top.Largest(top_k)
-                | 'FlattenList' >> beam.FlatMap(lambda lst: lst))
+                |
+                (f'Top({top_k})' >> beam.transforms.combiners.Top.Largest(top_k))
+                ) | 'FlattenList' >> beam.FlatMap(lambda lst: lst)
 
     # Performance optimization to obviate reading from finely sharded files
     # via AsIter. By forcing all data into a single group we end up reading
@@ -219,6 +216,7 @@ class _UniquesAnalyzerImpl(beam.PTransform):
           | 'PairWithNone' >> beam.Map(lambda x: (None, x))
           | 'GroupByNone' >> beam.GroupByKey()
           | 'ExtractValues' >> beam.FlatMap(lambda x: x[1]))
+
     counts |= 'ReshardToOneGroup' >> Reshard()  # pylint: disable=no-value-for-parameter
 
     # Using AsIter instead of AsList below in order to reduce max memory

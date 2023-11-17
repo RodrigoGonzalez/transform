@@ -45,13 +45,13 @@ class SchemaIOv1JSON(version_api.SchemaIO):
     if not file_io.file_exists(basedir):
       file_io.recursive_create_dir(basedir)
 
-    file_io.write_string_to_file(path + ".json", schema_as_json)
+    file_io.write_string_to_file(f"{path}.json", schema_as_json)
 
   def read(self, path):
     """Reads a v1 JSON schema from disk."""
     # Ensure that the Schema file exists
-    if not file_io.file_exists(path + ".json"):
-      raise IOError("v1 Schema file does not exist at: %s" % path)
+    if not file_io.file_exists(f"{path}.json"):
+      raise IOError(f"v1 Schema file does not exist at: {path}")
 
-    file_content = file_io.FileIO(path + ".json", "r").read()
+    file_content = file_io.FileIO(f"{path}.json", "r").read()
     return schema_io_v1_json_reader.from_schema_json(file_content)

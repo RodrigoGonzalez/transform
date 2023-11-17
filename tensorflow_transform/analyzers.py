@@ -75,8 +75,9 @@ class Analyzer(object):
       for dtype, shape, is_asset in output_dtype_shape_and_is_asset:
         output_tensor = tf.placeholder(dtype, shape)
         if is_asset and output_tensor.dtype != tf.string:
-          raise ValueError(('Tensor {} cannot represent an asset, because it '
-                            'is not a string.').format(output_tensor.name))
+          raise ValueError(
+              f'Tensor {output_tensor.name} cannot represent an asset, because it is not a string.'
+          )
         self._outputs.append(output_tensor)
         self._output_is_asset_map[output_tensor] = is_asset
     self._spec = spec

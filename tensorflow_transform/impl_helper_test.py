@@ -249,7 +249,7 @@ class ImplHelperTest(test_util.TensorFlowTestCase):
     }
     output_dict = impl_helper.make_output_dict(schema, fetches)
     self.assertSetEqual(set(six.iterkeys(output_dict)),
-                        set(['a', 'b', 'c', 'd', 'e', 'f']))
+                        {'a', 'b', 'c', 'd', 'e', 'f'})
     self.assertAllEqual(output_dict['a'], [100, 200, 300])
     self.assertAllEqual(output_dict['b'], [10.0, 20.0, 30.0])
     self.assertAllEqual(output_dict['c'], [[40.0], [80.0], [120.0]])
@@ -317,7 +317,7 @@ class ImplHelperTest(test_util.TensorFlowTestCase):
     instance_dicts = impl_helper.to_instance_dicts(batch_dict)
     self.assertEqual(2, len(instance_dicts))
     self.assertSetEqual(set(six.iterkeys(instance_dicts[0])),
-                        set(['a', 'b', 'c', 'd', 'e', 'f']))
+                        {'a', 'b', 'c', 'd', 'e', 'f'})
     self.assertAllEqual(instance_dicts[0]['a'], 100)
     self.assertAllEqual(instance_dicts[0]['b'], 10.0)
     self.assertAllEqual(instance_dicts[0]['c'], [40.0])

@@ -36,7 +36,7 @@ class DatasetMetadataDirectory(object):
 
   def version_dir(self, version):
     if version.version_flavor is not None:
-      version_flavor_dir = version.version_key + '-' + version.version_flavor
+      version_flavor_dir = f'{version.version_key}-{version.version_flavor}'
     else:
       version_flavor_dir = version.version_key
     return DatasetMetadataVersionDirectory(

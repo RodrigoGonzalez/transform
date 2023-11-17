@@ -36,11 +36,12 @@ def from_schema_json(schema_json):
           sparse_feature_dict)
       for sparse_feature_dict in schema_dict.get('sparseFeature', [])
   }
-  overlapping_keys = set(six.iterkeys(feature_column_schemas)).intersection(
-      six.iterkeys(sparse_feature_column_schemas))
-  if overlapping_keys:
-    raise ValueError('Keys of dense and sparse features overlapped. '
-                     'overlapping keys: %s' % overlapping_keys)
+  if overlapping_keys := set(
+      six.iterkeys(feature_column_schemas)).intersection(
+          six.iterkeys(sparse_feature_column_schemas)):
+    raise ValueError(
+        f'Keys of dense and sparse features overlapped. overlapping keys: {overlapping_keys}'
+    )
   feature_column_schemas.update(sparse_feature_column_schemas)
   return sch.Schema(feature_column_schemas)
 
@@ -51,9 +52,9 @@ def _from_feature_dict(feature_dict):
 
   axes = []
   if 'fixedShape' in feature_dict:
-    for axis in feature_dict['fixedShape'].get('axis', []):
-      # int() is needed because protobuf JSON encodes int64 as string
-      axes.append(sch.Axis(int(axis.get('size'))))
+    axes.extend(
+        sch.Axis(int(axis.get('size')))
+        for axis in feature_dict['fixedShape'].get('axis', []))
   elif 'valueCount' in feature_dict:
     # Value_count always means a 1-D feature of unknown size.
     # We don't support value_count.min and value_count.max yet.
@@ -77,7 +78,7 @@ def _from_feature_dict(feature_dict):
   elif tf_options.get('varLenFeature') is not None:
     representation = sch.ListColumnRepresentation()
   else:
-    raise ValueError('Could not interpret tfOptions: {}'.format(tf_options))
+    raise ValueError(f'Could not interpret tfOptions: {tf_options}')
 
   return sch.ColumnSchema(domain, axes, representation)
 

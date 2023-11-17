@@ -32,7 +32,7 @@ class Future(object):
     return self._name
 
   def __repr__(self):
-    return "{}({})".format(self.__class__.__name__, repr(self.__dict__))
+    return f"{self.__class__.__name__}({repr(self.__dict__)})"
 
 
 def _substitute_futures(obj, name_to_value, started=None):

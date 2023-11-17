@@ -2160,10 +2160,7 @@ class BeamImplTest(tft_unit.TransformTestCase):
         batch = self._fn(next_input)
       else:
         batch = self._fn(next_input, axis=0)
-      if any(accumulator):
-        return self._fn((accumulator, batch), axis=0)
-      else:
-        return batch
+      return self._fn((accumulator, batch), axis=0) if any(accumulator) else batch
 
     def merge_accumulators(self, accumulators):
       # numpy's sum, min, max, etc functions operate on array-like objects, but

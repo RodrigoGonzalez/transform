@@ -278,8 +278,8 @@ def apply_saved_transform(saved_model_dir, input_tensors):
   unbound_inputs, outputs = partially_apply_saved_transform(
       saved_model_dir, input_tensors)
   if unbound_inputs:
-    raise ValueError('Missing required inputs '
-                     'to transform: {}'.format(unbound_inputs.keys()))
+    raise ValueError(
+        f'Missing required inputs to transform: {unbound_inputs.keys()}')
   return outputs
 
 
@@ -325,38 +325,38 @@ def _decompose_sparse_tensors(tensor_map):
 
   for key, tensor in six.iteritems(tensor_map):
     if isinstance(tensor, tf.SparseTensor):
-      result[key + '$indices'] = tensor.indices
-      result[key + '$values'] = tensor.values
-      result[key + '$dense_shape'] = tensor.dense_shape
+      result[f'{key}$indices'] = tensor.indices
+      result[f'{key}$values'] = tensor.values
+      result[f'{key}$dense_shape'] = tensor.dense_shape
     else:
-      result[key + '$dense_tensor'] = tensor
+      result[f'{key}$dense_tensor'] = tensor
 
   return result
 
 
 def _recompose_sparse_tensors(tensor_map):
   """Undoes the function _decompose_sparse_tensors."""
-  result = {}
-
   sparse_keys = set()
   dense_keys = set()
   for key in six.iterkeys(tensor_map):
-    match = _SPARSE_TENSOR_NAME_RE.match(key)
-    if match:
+    if match := _SPARSE_TENSOR_NAME_RE.match(key):
       sparse_keys.add(match.group(1))
       continue
-    match = _DENSE_TENSOR_NAME_RE.match(key)
-    if match:
+    if match := _DENSE_TENSOR_NAME_RE.match(key):
       dense_keys.add(match.group(1))
       continue
-    raise ValueError('Unexpected key: {}'.format(key))
+    raise ValueError(f'Unexpected key: {key}')
 
-  for key in sparse_keys:
-    result[key] = tf.SparseTensor(tensor_map[key + '$indices'],
-                                  tensor_map[key + '$values'],
-                                  tensor_map[key + '$dense_shape'])
+  result = {
+      key: tf.SparseTensor(
+          tensor_map[f'{key}$indices'],
+          tensor_map[f'{key}$values'],
+          tensor_map[f'{key}$dense_shape'],
+      )
+      for key in sparse_keys
+  }
   for key in dense_keys:
-    result[key] = tensor_map[key + '$dense_tensor']
+    result[key] = tensor_map[f'{key}$dense_tensor']
 
   return result
 

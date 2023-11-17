@@ -133,7 +133,7 @@ def make_feed_dict(input_tensors, schema, instances):
     elif isinstance(representation, dataset_schema.ListColumnRepresentation):
       values = [instance[key] for instance in instances]
       indices = [range(len(instance[key])) for instance in instances]
-      max_index = max([len(instance[key]) for instance in instances])
+      max_index = max(len(instance[key]) for instance in instances)
       feed_value = make_sparse_batch(indices, values, max_index)
 
     elif isinstance(representation, dataset_schema.SparseColumnRepresentation):
@@ -211,10 +211,7 @@ def make_output_dict(schema, fetches):
           raise ValueError('Encountered out-of-order sparse index: %r.' %
                            batch_indices[current_offset])
 
-      if current_offset == start_offset:
-        # If the current row is empty, leave the default value, _EMPTY_ARRAY.
-        pass
-      else:
+      if current_offset != start_offset:
         instance_indices[current_row] = batch_indices[
             start_offset:current_offset, 1:]
         if instance_rank == 1:

@@ -61,7 +61,7 @@ class TransformTestCase(test_util.TensorFlowTestCase):
         self.assertAllClose(a_value, b_value)
     except (AssertionError, TypeError) as e:
       if msg:
-        e.args = ((e.args[0] + ' : ' + msg,) + e.args[1:])
+        e.args = (f'{e.args[0]} : {msg}', ) + e.args[1:]
       raise
 
   def _resolveDeferredMetadata(self, transformed_metadata):
@@ -146,10 +146,16 @@ class TransformTestCase(test_util.TensorFlowTestCase):
       for k, v in transformed_metadata.schema.column_schemas.iteritems():
         expected_schema = expected_metadata.schema.column_schemas[k]
 
-        self.assertEqual(expected_schema.representation, v.representation,
-                         "representation doesn't match for feature '%s'" % k)
-        self.assertEqual(expected_schema.domain.dtype, v.domain.dtype,
-                         "dtype doesn't match for feature '%s'" % k)
+        self.assertEqual(
+            expected_schema.representation,
+            v.representation,
+            f"representation doesn't match for feature '{k}'",
+        )
+        self.assertEqual(
+            expected_schema.domain.dtype,
+            v.domain.dtype,
+            f"dtype doesn't match for feature '{k}'",
+        )
 
     else:
       # Check the entire DatasetMetadata is as expected.

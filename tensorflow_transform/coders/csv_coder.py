@@ -73,8 +73,8 @@ def _decode_with_reader(value, reader):
   """
   try:
     result = reader.read_record(value)
-  except Exception as e:  # pylint: disable=broad-except
-    raise DecodeError('%s: %s' % (e, value))
+  except Exception as e:# pylint: disable=broad-except
+    raise DecodeError(f'{e}: {value}')
   return result
 
 
@@ -264,19 +264,18 @@ class _SparseFeatureHandler(object):
   def encode_value(self, string_list, sparse_value):
     """Encode the value of this feature into the CSV line."""
     index, value = sparse_value
-    if len(value) == len(index):
-      if self._encoder:
-        string_list[self._value_index] = self._encoder.encode_record(
-            map(str, value))
-        string_list[self._index_index] = self._encoder.encode_record(
-            map(str, index))
-      else:
-        string_list[self._value_index] = str(value[0]) if value else ''
-        string_list[self._index_index] = str(index[0]) if index else ''
-    else:
+    if len(value) != len(index):
       raise ValueError(
           'SparseFeature %r has value and index unaligned %r vs %r.' %
           (self._name, value, index))
+    if self._encoder:
+      string_list[self._value_index] = self._encoder.encode_record(
+          map(str, value))
+      string_list[self._index_index] = self._encoder.encode_record(
+          map(str, index))
+    else:
+      string_list[self._value_index] = str(value[0]) if value else ''
+      string_list[self._index_index] = str(index[0]) if index else ''
 
 
 class DecodeError(Exception):
@@ -466,8 +465,7 @@ class CsvCoder(object):
         feature_handler.encode_value(string_list,
                                      instance[feature_handler.name])
       except TypeError as e:
-        raise TypeError('%s while encoding feature "%s"' %
-                        (e, feature_handler.name))
+        raise TypeError(f'{e} while encoding feature "{feature_handler.name}"')
     return self._encoder.encode_record(string_list)
 
   # Please run tensorflow_transform/coders/benchmark_coders_test.py
@@ -506,8 +504,8 @@ class CsvCoder(object):
     """
     try:
       raw_values = self._reader.read_record(csv_string)
-    except Exception as e:  # pylint: disable=broad-except
-      raise DecodeError('%s: %s' % (e, csv_string))
+    except Exception as e:# pylint: disable=broad-except
+      raise DecodeError(f'{e}: {csv_string}')
 
     # An empty string when we expect a single column is potentially valid.  This
     # is probably more permissive than the csv standard but is useful for
@@ -518,8 +516,8 @@ class CsvCoder(object):
     # Check record length mismatches.
     if len(raw_values) != len(self._column_names):
       raise DecodeError(
-          'Columns do not match specified csv headers: %s -> %s' % (
-              self._column_names, raw_values))
+          f'Columns do not match specified csv headers: {self._column_names} -> {raw_values}'
+      )
 
     return {feature_handler.name: feature_handler.parse_value(raw_values)
             for feature_handler in self._feature_handlers}

@@ -55,13 +55,7 @@ def _make_cast_fn(np_dtype):
     return x
 
   def numeric_cast(x):
-    if isinstance(x, (np.generic, np.ndarray)):
-      # This works for both np.generic and np.array (of any shape).
-      return x.tolist()
-    else:
-      # This works for python scalars (or lists thereof), which require no
-      # casting.
-      return x
+    return x.tolist() if isinstance(x, (np.generic, np.ndarray)) else x
 
   # This is in agreement with Tensorflow conversions for Unicode values for both
   # Python 2 and 3 (and also works for non-Unicode objects). It is also in
@@ -272,8 +266,6 @@ class ExampleProtoCoder(object):
     Raises:
       ValueError: If `schema` is invalid.
     """
-    self._schema = schema
-
     # Using pre-allocated tf.train.Example objects for performance reasons.
     #
     # The _encode_example_cache is used solely by "encode" paths while the
@@ -293,6 +285,7 @@ class ExampleProtoCoder(object):
     self._decode_example_cache = None
 
     self._feature_handlers = []
+    self._schema = schema
     for name, feature_spec in six.iteritems(schema.as_feature_spec()):
       if isinstance(feature_spec, tf.FixedLenFeature):
         self._feature_handlers.append(
@@ -304,9 +297,9 @@ class ExampleProtoCoder(object):
         self._feature_handlers.append(
             _SparseFeatureHandler(name, feature_spec))
       else:
-        raise ValueError('feature_spec should be one of tf.FixedLenFeature, '
-                         'tf.VarLenFeature or tf.SparseFeature: %s was %s' %
-                         (name, type(feature_spec)))
+        raise ValueError(
+            f'feature_spec should be one of tf.FixedLenFeature, tf.VarLenFeature or tf.SparseFeature: {name} was {type(feature_spec)}'
+        )
 
   def __reduce__(self):
     return ExampleProtoCoder, (self._schema,)
@@ -327,8 +320,7 @@ class ExampleProtoCoder(object):
       try:
         feature_handler.encode_value(value)
       except TypeError as e:
-        raise TypeError('%s while encoding feature "%s"' %
-                        (e, feature_handler.name))
+        raise TypeError(f'{e} while encoding feature "{feature_handler.name}"')
 
     return self._encode_example_cache.SerializeToString()
 

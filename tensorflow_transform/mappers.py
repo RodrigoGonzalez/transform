@@ -604,9 +604,8 @@ def hash_strings(strings, hash_buckets, key=None, name=None):
   if (not isinstance(strings, (tf.Tensor,
                                tf.SparseTensor))) or strings.dtype != tf.string:
     raise TypeError(
-        'Input to hash_strings must be a Tensor or SparseTensor of dtype '
-        'string; got {}'.
-        format(strings.dtype))
+        f'Input to hash_strings must be a Tensor or SparseTensor of dtype string; got {strings.dtype}'
+    )
   if isinstance(strings, tf.SparseTensor):
     return tf.SparseTensor(indices=strings.indices,
                            values=hash_strings(

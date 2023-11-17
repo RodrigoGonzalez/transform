@@ -59,7 +59,7 @@ class Schema(futures.FutureContent):
     return not self == other
 
   def __repr__(self):
-    return '{}({})'.format(self.__class__.__name__, repr(self.__dict__))
+    return f'{self.__class__.__name__}({repr(self.__dict__)})'
 
   def __getitem__(self, index):
     return self.column_schemas[index]
@@ -150,7 +150,7 @@ class ColumnSchema(futures.FutureContent):
     return not self == other
 
   def __repr__(self):
-    return '{}({})'.format(self.__class__.__name__, repr(self.__dict__))
+    return f'{self.__class__.__name__}({repr(self.__dict__)})'
 
   def as_feature_spec(self):
     """Returns a representation of this ColumnSchema as a feature spec.
@@ -180,10 +180,7 @@ class ColumnSchema(futures.FutureContent):
   def is_fixed_size(self):
     if self.axes is None:
       return False
-    for axis in self.axes:
-      if axis.size is None:
-        return False
-    return True
+    return all(axis.size is not None for axis in self.axes)
 
   def merge(self, other):
     raise NotImplementedError('Merge not implemented yet.')
@@ -206,7 +203,7 @@ class Domain(futures.FutureContent):
     return not self == other
 
   def __repr__(self):
-    return '{}({})'.format(self.__class__.__name__, repr(self.__dict__))
+    return f'{self.__class__.__name__}({repr(self.__dict__)})'
 
   @property
   def dtype(self):
@@ -314,7 +311,7 @@ def _dtype_to_domain(dtype):
     return StringDomain(dtype)
   if dtype == tf.bool:
     return BoolDomain(dtype)
-  raise ValueError('Schema cannot accommodate dtype: {}'.format(dtype))
+  raise ValueError(f'Schema cannot accommodate dtype: {dtype}')
 
 
 class Axis(futures.FutureContent):
@@ -395,11 +392,9 @@ class FixedColumnRepresentation(ColumnRepresentation):
       raise ValueError('A column of unknown size cannot be represented as '
                        'fixed-size.')
     if column.domain.dtype not in _TF_EXAMPLE_ALLOWED_TYPES:
-      raise ValueError('tf.Example parser supports only types {}, so it is '
-                       'invalid to generate a feature_spec with type '
-                       '{}.'.format(
-                           _TF_EXAMPLE_ALLOWED_TYPES,
-                           repr(column.domain.dtype)))
+      raise ValueError(
+          f'tf.Example parser supports only types {_TF_EXAMPLE_ALLOWED_TYPES}, so it is invalid to generate a feature_spec with type {repr(column.domain.dtype)}.'
+      )
     return tf.FixedLenFeature(column.tf_shape().as_list(),
                               column.domain.dtype,
                               self.default_value)
@@ -419,15 +414,13 @@ class ListColumnRepresentation(ColumnRepresentation):
     super(ListColumnRepresentation, self).__init__()
 
   def __repr__(self):
-    return '%s()' % (self.__class__.__name__,)
+    return f'{self.__class__.__name__}()'
 
   def as_feature_spec(self, column):
     if column.domain.dtype not in _TF_EXAMPLE_ALLOWED_TYPES:
-      raise ValueError('tf.Example parser supports only types {}, so it is '
-                       'invalid to generate a feature_spec with type '
-                       '{}.'.format(
-                           _TF_EXAMPLE_ALLOWED_TYPES,
-                           repr(column.domain.dtype)))
+      raise ValueError(
+          f'tf.Example parser supports only types {_TF_EXAMPLE_ALLOWED_TYPES}, so it is invalid to generate a feature_spec with type {repr(column.domain.dtype)}.'
+      )
     return tf.VarLenFeature(column.domain.dtype)
 
   def as_batched_placeholder(self, column):
@@ -464,11 +457,9 @@ class SparseColumnRepresentation(ColumnRepresentation):
     index = ind[0]
 
     if column.domain.dtype not in _TF_EXAMPLE_ALLOWED_TYPES:
-      raise ValueError('tf.Example parser supports only types {}, so it is '
-                       'invalid to generate a feature_spec with type '
-                       '{}.'.format(
-                           _TF_EXAMPLE_ALLOWED_TYPES,
-                           repr(column.domain.dtype)))
+      raise ValueError(
+          f'tf.Example parser supports only types {_TF_EXAMPLE_ALLOWED_TYPES}, so it is invalid to generate a feature_spec with type {repr(column.domain.dtype)}.'
+      )
 
     return tf.SparseFeature(index.name,
                             self._value_field_name,
@@ -533,8 +524,9 @@ def _from_parse_feature(parse_feature):
     return ColumnSchema(parse_feature.dtype, [parse_feature.size],
                         representation)
 
-  raise ValueError('Cannot interpret feature spec {} with type {}'.format(
-      parse_feature, type(parse_feature)))
+  raise ValueError(
+      f'Cannot interpret feature spec {parse_feature} with type {type(parse_feature)}'
+  )
 
 
 def infer_column_schema_from_tensor(tensor):
@@ -577,7 +569,7 @@ def _shape_to_axes(shape, remove_batch_dimension=False):
       shape = shape.as_list()
     axes = [Axis(axis_size) for axis_size in shape]
     if remove_batch_dimension:
-      if len(axes) < 1:
+      if not axes:
         raise ValueError('Expected tf_shape to have rank >= 1')
       axes = axes[1:]
   return axes

@@ -90,8 +90,8 @@ class ResolveBeamFutures(beam.PTransform):
     tensor_value_pairs = []
     for name, pcoll in six.iteritems(pcollections):
       tensor_value_pairs.append(
-          pcoll
-          | 'AddName[%s]' % name >> beam.Map(lambda x, name=name: (name, x)))
+          (pcoll
+           | f'AddName[{name}]' >> beam.Map(lambda x, name=name: (name, x))))
     tensor_value_mapping = beam.pvalue.AsDict(
         tensor_value_pairs | 'MergeTensorValuePairs' >> beam.Flatten(
             pipeline=self.pipeline))
